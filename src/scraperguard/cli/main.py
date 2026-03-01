@@ -15,6 +15,7 @@ import time
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -33,7 +34,7 @@ from scraperguard.health import compute_health_score, format_health_report
 from scraperguard.storage.models import SnapshotMetadata
 
 
-def _fetch_url(url: str) -> tuple[str, int, dict, float]:
+def _fetch_url(url: str) -> tuple[str, int, dict[str, Any], float]:
     """Fetch a URL and return (html, status, headers, latency_ms)."""
     start = time.monotonic()
     req = urllib.request.Request(url, headers={"User-Agent": "ScraperGuard/1.0"})
@@ -55,7 +56,9 @@ def cli() -> None:
 @click.argument("target")
 @click.option("--schema", default=None, help="Path to a Python file with a BaseSchema subclass.")
 @click.option(
-    "--config", "config_path", default=None,
+    "--config",
+    "config_path",
+    default=None,
     help="Path to scraperguard.yaml config file.",
 )
 @click.option("--run-id", default=None, help="Run ID to group with (creates new if not provided).")
@@ -89,9 +92,9 @@ def run(
         # d) Get HTML and items
         url: str
         html: str
-        items: list[dict]
+        items: list[dict[str, Any]]
         http_status: int = 200
-        headers: dict = {}
+        headers: dict[str, Any] = {}
         latency_ms: float = 0.0
 
         if target.startswith("http://") or target.startswith("https://"):
@@ -148,11 +151,14 @@ def run(
             try:
                 schema_cls = load_schema_from_file(schema)
                 validation_result = schema_cls.validate_batch(
-                    items, run_id=run_meta.id, url=url,
+                    items,
+                    run_id=run_meta.id,
+                    url=url,
                 )
                 try:
                     drift_events = run_drift_analysis(
-                        validation_result, storage,
+                        validation_result,
+                        storage,
                         threshold=cfg.schema.null_drift_threshold,
                     )
                 except Exception as exc:
@@ -197,7 +203,8 @@ def run(
                         prev_snapshot_obj = s
                         break
                 if prev_snapshot_obj and should_diff(
-                    snapshot.fingerprint, prev_snapshot_obj.fingerprint,
+                    snapshot.fingerprint,
+                    prev_snapshot_obj.fingerprint,
                 ):
                     before_tree = parse_to_tree(prev_snapshot_obj.normalized_html)
                     after_tree = parse_to_tree(snapshot.normalized_html)
@@ -214,7 +221,8 @@ def run(
                         prev_snapshot_obj = s
                         break
                 if prev_snapshot_obj and should_diff(
-                    snapshot.fingerprint, prev_snapshot_obj.fingerprint,
+                    snapshot.fingerprint,
+                    prev_snapshot_obj.fingerprint,
                 ):
                     before_tree = parse_to_tree(prev_snapshot_obj.normalized_html)
                     after_tree = parse_to_tree(snapshot.normalized_html)
@@ -223,14 +231,16 @@ def run(
                 click.echo(f"Warning: DOM diff failed: {exc}", err=True)
 
         # i) Failure classification
-        classifications = classify_failure(ClassificationInput(
-            validation_result=validation_result,
-            dom_changes=dom_changes,
-            selector_statuses=selector_statuses,
-            raw_html=html,
-            http_status=http_status,
-            response_size_bytes=len(html.encode("utf-8")),
-        ))
+        classifications = classify_failure(
+            ClassificationInput(
+                validation_result=validation_result,
+                dom_changes=dom_changes,
+                selector_statuses=selector_statuses,
+                raw_html=html,
+                http_status=http_status,
+                response_size_bytes=len(html.encode("utf-8")),
+            )
+        )
 
         # j) Health score
         report = compute_health_score(
@@ -244,16 +254,21 @@ def run(
         )
 
         # k) Alerting
-        dispatchers = []
+        from scraperguard.alerts.base import AlertDispatcher
+
+        dispatchers: list[AlertDispatcher] = []
         if cfg.alerts.slack.enabled and cfg.alerts.slack.webhook:
             from scraperguard.alerts.slack import SlackDispatcher
+
             dispatchers.append(SlackDispatcher(cfg.alerts.slack.webhook))
         if cfg.alerts.webhook_url:
             from scraperguard.alerts.webhook import WebhookDispatcher
+
             dispatchers.append(WebhookDispatcher(cfg.alerts.webhook_url))
         if dispatchers:
             from scraperguard.alerts.dispatcher import AlertManager
             from scraperguard.alerts.models import Alert
+
             alert_mgr = AlertManager(dispatchers, cfg.alerts.thresholds)
             for c in classifications:
                 if c.severity in ("critical", "warning"):
@@ -483,7 +498,9 @@ def report(url: str, run_id: str | None, fmt: str) -> None:
         schema_compliance = comp_map.get("Schema Compliance", "")
         extraction_completeness = comp_map.get("Extraction Completeness", "")
         selector_stability = comp_map.get("Selector Stability", "")
-        click.echo("url,score,status,schema_compliance,extraction_completeness,selector_stability,timestamp")
+        click.echo(
+            "url,score,status,schema_compliance,extraction_completeness,selector_stability,timestamp"
+        )
         click.echo(
             f"{url},{health_report.overall_score},{health_report.status},"
             f"{schema_compliance},{extraction_completeness},{selector_stability},"
@@ -500,8 +517,7 @@ def serve(host: str, port: int) -> None:
         import uvicorn
     except ImportError:
         click.echo(
-            "Error: uvicorn not installed. "
-            "Install API dependencies: pip install scraperguard[api]",
+            "Error: uvicorn not installed. Install API dependencies: pip install scraperguard[api]",
             err=True,
         )
         raise SystemExit(1)

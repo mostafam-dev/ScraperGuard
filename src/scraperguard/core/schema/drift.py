@@ -53,8 +53,7 @@ def compute_baseline_ratios(
             field_counts[field_name] += 1
 
     return {
-        field_name: field_sums[field_name] / field_counts[field_name]
-        for field_name in field_sums
+        field_name: field_sums[field_name] / field_counts[field_name] for field_name in field_sums
     }
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Any
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
@@ -16,18 +17,18 @@ from scraperguard.health import compute_health_score
 router = APIRouter(prefix="/api")
 
 
-def _get_storage(request: Request):
+def _get_storage(request: Request) -> Any:
     return request.app.state.storage
 
 
 @router.get("/health")
-async def health() -> dict:
+async def health() -> dict[str, str]:
     """Service health check."""
     return {"status": "ok", "version": scraperguard.__version__}
 
 
 @router.get("/runs")
-async def list_runs(request: Request, limit: int = Query(default=20, ge=1)) -> dict:
+async def list_runs(request: Request, limit: int = Query(default=20, ge=1)) -> dict[str, Any]:
     """List recent scraper runs."""
     storage = _get_storage(request)
     runs = storage.list_runs(limit=limit)
@@ -49,7 +50,7 @@ async def list_snapshots(
     request: Request,
     url: str = Query(...),
     limit: int = Query(default=10, ge=1),
-) -> dict:
+) -> dict[str, Any]:
     """List recent snapshots for a URL (lightweight, no HTML bodies)."""
     storage = _get_storage(request)
     snapshots = storage.list_snapshots(url, limit=limit)
@@ -79,7 +80,7 @@ async def list_validation_results(
     request: Request,
     schema_name: str = Query(...),
     limit: int = Query(default=10, ge=1),
-) -> dict:
+) -> dict[str, Any]:
     """List validation result history for a URL and schema."""
     storage = _get_storage(request)
     results = storage.list_validation_results(url, schema_name, limit=limit)
@@ -103,11 +104,13 @@ async def get_drift(
             content={"error": "No validation results found for this URL and schema"},
         )
     events = run_drift_analysis(latest, storage, baseline_count=baseline_count, threshold=threshold)
-    return JSONResponse(content={
-        "drift_events": [asdict(e) for e in events],
-        "baseline_count": baseline_count,
-        "threshold": threshold,
-    })
+    return JSONResponse(
+        content={
+            "drift_events": [asdict(e) for e in events],
+            "baseline_count": baseline_count,
+            "threshold": threshold,
+        }
+    )
 
 
 @router.get("/report/{run_id}")
@@ -127,7 +130,7 @@ async def get_report(
     if url is None:
         # Query snapshots associated with this run — we need to find a URL
         # The storage doesn't have a list-by-run method, so use the connection directly
-        if hasattr(storage, '_conn'):
+        if hasattr(storage, "_conn"):
             cursor = storage._conn.execute(
                 "SELECT url FROM snapshots WHERE run_id = ? LIMIT 1",
                 (run_id,),
@@ -145,7 +148,7 @@ async def get_report(
     storage.get_latest_snapshot(url)
     validation_result = storage.get_latest_validation_result(url, schema_name="")
     # Try to find any schema name for this URL
-    if validation_result is None and hasattr(storage, '_conn'):
+    if validation_result is None and hasattr(storage, "_conn"):
         cursor = storage._conn.execute(
             "SELECT schema_name FROM validation_results"
             " WHERE url = ? ORDER BY timestamp DESC LIMIT 1",
@@ -169,23 +172,25 @@ async def get_report(
         url=url,
     )
 
-    return JSONResponse(content={
-        "overall_score": report.overall_score,
-        "status": report.status,
-        "components": [
-            {
-                "name": c.name,
-                "score": round(c.score, 4),
-                "weight": c.weight,
-                "details": c.details,
-            }
-            for c in report.components
-        ],
-        "drift_events": [asdict(e) for e in report.drift_events],
-        "run_id": report.run_id,
-        "url": report.url,
-        "timestamp": report.timestamp.isoformat(),
-    })
+    return JSONResponse(
+        content={
+            "overall_score": report.overall_score,
+            "status": report.status,
+            "components": [
+                {
+                    "name": c.name,
+                    "score": round(c.score, 4),
+                    "weight": c.weight,
+                    "details": c.details,
+                }
+                for c in report.components
+            ],
+            "drift_events": [asdict(e) for e in report.drift_events],
+            "run_id": report.run_id,
+            "url": report.url,
+            "timestamp": report.timestamp.isoformat(),
+        }
+    )
 
 
 @router.get("/selectors/{url:path}")
@@ -214,6 +219,8 @@ async def get_selector_statuses(
     previous_tree = parse_to_tree(snapshots[1].normalized_html) if len(snapshots) > 1 else None
 
     statuses = track_selectors(current_tree, previous_tree, selector_list)
-    return JSONResponse(content={
-        "selector_statuses": [asdict(s) for s in statuses],
-    })
+    return JSONResponse(
+        content={
+            "selector_statuses": [asdict(s) for s in statuses],
+        }
+    )

@@ -88,6 +88,7 @@ def tree_to_signature(node: DOMNode) -> str:
 # Simplified CSS selector matching
 # ---------------------------------------------------------------------------
 
+
 def _parse_simple_selector(sel: str) -> tuple[str | None, list[str]]:
     """Parse a single simple selector like 'div.price-tag' into (tag, [classes]).
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,7 +55,7 @@ def create_app(config: ScraperGuardConfig | None = None) -> FastAPI:
 
     # Request logging middleware
     @app.middleware("http")
-    async def _request_logging_middleware(request: Request, call_next):
+    async def _request_logging_middleware(request: Request, call_next: Any) -> Any:
         start = time.perf_counter()
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000

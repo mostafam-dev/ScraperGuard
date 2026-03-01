@@ -218,11 +218,7 @@ def compute_health_score(
     overall_score = max(0, min(100, round(raw)))
 
     # Determine status
-    no_data = (
-        validation_result is None
-        and not selector_statuses
-        and not dom_changes
-    )
+    no_data = validation_result is None and not selector_statuses and not dom_changes
     if no_data:
         status = "unknown"
     elif overall_score >= 80:

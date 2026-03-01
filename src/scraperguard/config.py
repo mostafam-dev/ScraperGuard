@@ -109,7 +109,7 @@ def _interpolate_env_vars(data: Any) -> Any:
 # ---------------------------------------------------------------------------
 
 
-def _merge_schema(raw: dict) -> SchemaConfig:
+def _merge_schema(raw: dict[str, Any]) -> SchemaConfig:
     cfg = SchemaConfig()
     if "strict" in raw:
         cfg.strict = raw["strict"]
@@ -118,7 +118,7 @@ def _merge_schema(raw: dict) -> SchemaConfig:
     return cfg
 
 
-def _merge_storage(raw: dict) -> StorageConfig:
+def _merge_storage(raw: dict[str, Any]) -> StorageConfig:
     cfg = StorageConfig()
     if "backend" in raw:
         cfg.backend = raw["backend"]
@@ -127,7 +127,7 @@ def _merge_storage(raw: dict) -> StorageConfig:
     return cfg
 
 
-def _merge_slack(raw: dict) -> SlackAlertConfig:
+def _merge_slack(raw: dict[str, Any]) -> SlackAlertConfig:
     cfg = SlackAlertConfig()
     if "enabled" in raw:
         cfg.enabled = raw["enabled"]
@@ -136,7 +136,7 @@ def _merge_slack(raw: dict) -> SlackAlertConfig:
     return cfg
 
 
-def _merge_thresholds(raw: dict) -> AlertThresholds:
+def _merge_thresholds(raw: dict[str, Any]) -> AlertThresholds:
     cfg = AlertThresholds()
     if "health_score" in raw:
         cfg.health_score = int(raw["health_score"])
@@ -147,7 +147,7 @@ def _merge_thresholds(raw: dict) -> AlertThresholds:
     return cfg
 
 
-def _merge_alerts(raw: dict) -> AlertsConfig:
+def _merge_alerts(raw: dict[str, Any]) -> AlertsConfig:
     cfg = AlertsConfig()
     if "slack" in raw:
         cfg.slack = _merge_slack(raw["slack"])
@@ -160,7 +160,7 @@ def _merge_alerts(raw: dict) -> AlertsConfig:
     return cfg
 
 
-def _merge_snapshots(raw: dict) -> SnapshotConfig:
+def _merge_snapshots(raw: dict[str, Any]) -> SnapshotConfig:
     cfg = SnapshotConfig()
     if "store_raw_html" in raw:
         cfg.store_raw_html = raw["store_raw_html"]
@@ -169,7 +169,7 @@ def _merge_snapshots(raw: dict) -> SnapshotConfig:
     return cfg
 
 
-def _merge_config(raw: dict) -> ScraperGuardConfig:
+def _merge_config(raw: dict[str, Any]) -> ScraperGuardConfig:
     """Merge a raw YAML dict into a ScraperGuardConfig, keeping defaults for missing fields."""
     cfg = ScraperGuardConfig()
     if "schema" in raw:

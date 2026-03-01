@@ -8,6 +8,7 @@ and mean time to failure.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -28,7 +29,7 @@ class DriftTracker:
     them to the event store, and provides statistical queries.
     """
 
-    def record_event(self, url: str, event: dict) -> None:
+    def record_event(self, url: str, event: dict[str, Any]) -> None:
         """Append a validation or diff event to the time-series store.
 
         Args:

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _import_class(dotted_path: str) -> type:
+def _import_class(dotted_path: str) -> type[Any]:
     """Dynamically import a class from a dotted module path.
 
     Example: ``"myproject.schemas.ProductSchema"`` imports and returns
@@ -42,7 +42,8 @@ def _import_class(dotted_path: str) -> type:
     if not module_path:
         raise ImportError(f"Invalid dotted path: {dotted_path!r}")
     module = importlib.import_module(module_path)
-    return getattr(module, class_name)
+    cls: type[Any] = getattr(module, class_name)
+    return cls
 
 
 class ScraperGuardValidationPipeline:
@@ -71,7 +72,7 @@ class ScraperGuardValidationPipeline:
         self.selectors = selectors
         self.store_raw_html = store_raw_html
         self.crawler = crawler
-        self._items_by_url: dict[str, list[dict]] = defaultdict(list)
+        self._items_by_url: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
     @classmethod
     def from_crawler(cls, crawler: Crawler) -> ScraperGuardValidationPipeline:
@@ -200,7 +201,7 @@ class ScraperGuardValidationPipeline:
 
     def _dispatch_alerts(
         self,
-        classifications: list,
+        classifications: list[Any],
         url: str,
         spider: Spider,
     ) -> None:
@@ -208,13 +209,15 @@ class ScraperGuardValidationPipeline:
         if not self.config or not hasattr(self.config, "alerts"):
             return
         alerts_cfg = self.config.alerts
-        dispatchers: list = []
+        dispatchers: list[Any] = []
         try:
             if alerts_cfg.slack.enabled and alerts_cfg.slack.webhook:
                 from scraperguard.alerts.slack import SlackDispatcher
+
                 dispatchers.append(SlackDispatcher(alerts_cfg.slack.webhook))
             if alerts_cfg.webhook_url:
                 from scraperguard.alerts.webhook import WebhookDispatcher
+
                 dispatchers.append(WebhookDispatcher(alerts_cfg.webhook_url))
         except Exception:
             return
@@ -222,6 +225,7 @@ class ScraperGuardValidationPipeline:
             return
         from scraperguard.alerts.dispatcher import AlertManager
         from scraperguard.alerts.models import Alert
+
         alert_mgr = AlertManager(dispatchers, alerts_cfg.thresholds)
         for c in classifications:
             if c.severity in ("critical", "warning"):
@@ -237,13 +241,15 @@ class ScraperGuardValidationPipeline:
                 for name, ok in results.items():
                     status = "OK" if ok else "FAILED"
                     spider.logger.info(
-                        "ScraperGuard: Alert sent to %s: %s", name, status,
+                        "ScraperGuard: Alert sent to %s: %s",
+                        name,
+                        status,
                     )
 
     def _analyze_url(
         self,
         url: str,
-        items: list[dict],
+        items: list[dict[str, Any]],
         spider: Spider,
         middleware: Any,
     ) -> None:
@@ -287,7 +293,9 @@ class ScraperGuardValidationPipeline:
         if self.schema_cls is not None:
             try:
                 validation_result = self.schema_cls.validate_batch(
-                    items, run_id=self.run_id, url=url,
+                    items,
+                    run_id=self.run_id,
+                    url=url,
                 )
                 # Run drift analysis BEFORE saving so current result
                 # doesn't pollute the historical baseline.
@@ -296,7 +304,9 @@ class ScraperGuardValidationPipeline:
                     if self.config and hasattr(self.config, "schema"):
                         threshold = self.config.schema.null_drift_threshold
                     drift_events = run_drift_analysis(
-                        validation_result, self.storage, threshold=threshold,
+                        validation_result,
+                        self.storage,
+                        threshold=threshold,
                     )
                     if drift_events and self.crawler:
                         try:
@@ -365,14 +375,16 @@ class ScraperGuardValidationPipeline:
         # --- g) Failure classification ---
         classifications = []
         try:
-            classifications = classify_failure(ClassificationInput(
-                validation_result=validation_result,
-                dom_changes=dom_changes,
-                selector_statuses=selector_statuses,
-                raw_html=raw_html or None,
-                http_status=metadata.http_status if metadata else None,
-                response_size_bytes=metadata.response_size_bytes if metadata else None,
-            ))
+            classifications = classify_failure(
+                ClassificationInput(
+                    validation_result=validation_result,
+                    dom_changes=dom_changes,
+                    selector_statuses=selector_statuses,
+                    raw_html=raw_html or None,
+                    http_status=metadata.http_status if metadata else None,
+                    response_size_bytes=metadata.response_size_bytes if metadata else None,
+                )
+            )
         except Exception:
             logger.exception("ScraperGuard: Failure classification failed for %s", url)
 

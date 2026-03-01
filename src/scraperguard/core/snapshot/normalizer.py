@@ -18,58 +18,85 @@ from lxml.html import HtmlElement, tostring
 # ---------------------------------------------------------------------------
 
 # data- attribute suffixes that are noise (tracking, analytics, framework)
-REMOVE_DATA_SUFFIXES: frozenset[str] = frozenset({
-    "analytics",
-    "tracking",
-    "gtm",
-    "reactid",
-    "testid",
-    "timestamp",
-    "session",
-    "token",
-    "nonce",
-    "csrf",
-})
+REMOVE_DATA_SUFFIXES: frozenset[str] = frozenset(
+    {
+        "analytics",
+        "tracking",
+        "gtm",
+        "reactid",
+        "testid",
+        "timestamp",
+        "session",
+        "token",
+        "nonce",
+        "csrf",
+    }
+)
 
 # Attribute names unconditionally removed
-REMOVE_ATTRIBUTE_NAMES: frozenset[str] = frozenset({
-    "style",
-    "jsaction",
-    "jscontroller",
-    "jsmodel",
-    "jsname",
-})
+REMOVE_ATTRIBUTE_NAMES: frozenset[str] = frozenset(
+    {
+        "style",
+        "jsaction",
+        "jscontroller",
+        "jsmodel",
+        "jsname",
+    }
+)
 
 # data- attributes explicitly kept (structural / semantic meaning)
-KEEP_DATA_ATTRIBUTES: frozenset[str] = frozenset({
-    "data-price",
-    "data-product",
-    "data-id",
-    "data-sku",
-    "data-category",
-    "data-available",
-    "data-rating",
-    "data-name",
-    "data-value",
-    "data-type",
-    "data-status",
-})
+KEEP_DATA_ATTRIBUTES: frozenset[str] = frozenset(
+    {
+        "data-price",
+        "data-product",
+        "data-id",
+        "data-sku",
+        "data-category",
+        "data-available",
+        "data-rating",
+        "data-name",
+        "data-value",
+        "data-type",
+        "data-status",
+    }
+)
 
 # HTML void / self-closing elements that are meaningful when empty
-VOID_ELEMENTS: frozenset[str] = frozenset({
-    "img", "br", "hr", "input", "meta", "link",
-    "area", "base", "col", "embed", "source", "track", "wbr",
-})
+VOID_ELEMENTS: frozenset[str] = frozenset(
+    {
+        "img",
+        "br",
+        "hr",
+        "input",
+        "meta",
+        "link",
+        "area",
+        "base",
+        "col",
+        "embed",
+        "source",
+        "track",
+        "wbr",
+    }
+)
 
 # Elements that are semantically meaningful even when empty
-KEEP_EMPTY_ELEMENTS: frozenset[str] = frozenset({
-    "td", "th", "li",
-})
+KEEP_EMPTY_ELEMENTS: frozenset[str] = frozenset(
+    {
+        "td",
+        "th",
+        "li",
+    }
+)
 
 # Tags whose entire subtree is noise
-NOISE_TAGS: frozenset[str] = frozenset({
-    "script", "style", "noscript",
-})
+NOISE_TAGS: frozenset[str] = frozenset(
+    {
+        "script",
+        "style",
+        "noscript",
+    }
+)
 
 _EVENT_HANDLER_RE = re.compile(r"^on[a-z]+$")
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -78,6 +105,7 @@ _WHITESPACE_RE = re.compile(r"\s+")
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
+
 
 class NormalizationError(Exception):
     """Raised when HTML cannot be parsed."""
@@ -91,6 +119,7 @@ class NormalizationError(Exception):
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _should_remove_attribute(name: str) -> bool:
     """Return True if *name* should be stripped from elements."""
@@ -119,7 +148,7 @@ def _should_remove_attribute(name: str) -> bool:
 def _strip_noise_elements(tree: HtmlElement) -> None:
     """Remove script, style, noscript, comments, and processing instructions."""
     # Collect removals first to avoid mutating during iteration
-    to_remove: list[object] = []
+    to_remove: list[HtmlElement] = []
 
     for element in tree.iter():
         if isinstance(element.tag, str) and element.tag in NOISE_TAGS:
@@ -202,6 +231,7 @@ def _remove_empty_elements(tree: HtmlElement) -> None:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def normalize_html(raw_html: str) -> str:
     """Parse and normalize raw HTML into a clean, deterministic string.
 
@@ -248,7 +278,7 @@ def normalize_html(raw_html: str) -> str:
     _remove_empty_elements(tree)
 
     result = tostring(tree, encoding="unicode", method="html")
-    return result.strip()
+    return str(result).strip()
 
 
 def extract_text_content(html: str) -> str:

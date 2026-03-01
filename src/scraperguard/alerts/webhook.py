@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from scraperguard.alerts.base import AlertDispatcher
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class WebhookDispatcher(AlertDispatcher):
     """Dispatches alerts as JSON POST requests to a configurable URL."""
 
-    def __init__(self, url: str, headers: dict | None = None) -> None:
+    def __init__(self, url: str, headers: dict[str, Any] | None = None) -> None:
         self.url = url
         self.headers = headers or {}
 
@@ -38,6 +38,6 @@ class WebhookDispatcher(AlertDispatcher):
                 method="POST",
             )
             with urllib.request.urlopen(req) as resp:
-                return resp.status == 200
+                return bool(resp.status == 200)
         except Exception:
             return False

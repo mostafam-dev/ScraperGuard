@@ -15,7 +15,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from scraperguard.core.classify.classifier import ClassificationInput, classify_failure
 from scraperguard.core.dom_diff.differ import diff_trees
@@ -66,7 +66,7 @@ class PageObserver:
         self._selectors = selectors or []
         self._schema = schema
 
-        self._items: list[dict] = []
+        self._items: list[dict[str, Any]] = []
         self._url_override: str | None = None
         self._health_report: HealthReport | None = None
         self._start_time: float = 0.0
@@ -74,7 +74,7 @@ class PageObserver:
 
     # -- Public setters ------------------------------------------------------
 
-    def set_items(self, items: list[dict]) -> None:
+    def set_items(self, items: list[dict[str, Any]]) -> None:
         """Store extracted items for validation in the ``__aexit__`` phase.
 
         Args:
@@ -157,7 +157,9 @@ class PageObserver:
         if self._schema is not None and self._items:
             try:
                 validation_result = self._schema.validate_batch(
-                    self._items, run_id=self._run_id, url=url,
+                    self._items,
+                    run_id=self._run_id,
+                    url=url,
                 )
                 # Run drift analysis BEFORE saving so current result
                 # doesn't pollute the historical baseline.
@@ -166,7 +168,9 @@ class PageObserver:
                     if self._config and hasattr(self._config, "schema"):
                         threshold = self._config.schema.null_drift_threshold
                     drift_events = run_drift_analysis(
-                        validation_result, self._storage, threshold=threshold,
+                        validation_result,
+                        self._storage,
+                        threshold=threshold,
                     )
                 except Exception:
                     logger.exception("ScraperGuard: Drift analysis failed for %s", url)
@@ -175,7 +179,7 @@ class PageObserver:
                 logger.exception("ScraperGuard: Schema validation failed for %s", url)
 
         # --- d) DOM diff ---
-        dom_changes: list = []
+        dom_changes: list[Any] = []
         try:
             snapshots = self._storage.list_snapshots(url, limit=2)
             prev_snapshot = None
@@ -209,14 +213,16 @@ class PageObserver:
         # --- f) Failure classification ---
         classifications = []
         try:
-            classifications = classify_failure(ClassificationInput(
-                validation_result=validation_result,
-                dom_changes=dom_changes,
-                selector_statuses=selector_statuses,
-                raw_html=self._raw_html or None,
-                http_status=metadata.http_status,
-                response_size_bytes=metadata.response_size_bytes,
-            ))
+            classifications = classify_failure(
+                ClassificationInput(
+                    validation_result=validation_result,
+                    dom_changes=dom_changes,
+                    selector_statuses=selector_statuses,
+                    raw_html=self._raw_html or None,
+                    http_status=metadata.http_status,
+                    response_size_bytes=metadata.response_size_bytes,
+                )
+            )
         except Exception:
             logger.exception("ScraperGuard: Failure classification failed for %s", url)
 
@@ -285,7 +291,7 @@ async def capture_page(
     page: object,
     storage: StorageBackend,
     run_id: str,
-    items: list[dict] | None = None,
+    items: list[dict[str, Any]] | None = None,
     schema: type[BaseSchema] | None = None,
     selectors: list[str] | None = None,
 ) -> HealthReport | None:

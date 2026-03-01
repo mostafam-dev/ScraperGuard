@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from scraperguard.alerts.base import AlertDispatcher
 
@@ -28,7 +28,7 @@ class SlackDispatcher(AlertDispatcher):
     def name(self) -> str:
         return "slack"
 
-    def _build_payload(self, alert: Alert) -> dict:
+    def _build_payload(self, alert: Alert) -> dict[str, Any]:
         emoji = _SEVERITY_EMOJI.get(alert.severity, ":grey_question:")
         return {
             "blocks": [
@@ -73,6 +73,6 @@ class SlackDispatcher(AlertDispatcher):
                 method="POST",
             )
             with urllib.request.urlopen(req) as resp:
-                return resp.status == 200
+                return bool(resp.status == 200)
         except Exception:
             return False

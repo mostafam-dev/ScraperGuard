@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from typing import Any
 
 from scraperguard.storage.base import StorageBackend
 from scraperguard.storage.models import (
@@ -85,11 +86,10 @@ class SQLiteBackend(StorageBackend):
 
     # -- Run management -----------------------------------------------------
 
-    def create_run(self, scraper_name: str, config: dict | None = None) -> RunMetadata:
+    def create_run(self, scraper_name: str, config: dict[str, Any] | None = None) -> RunMetadata:
         run = RunMetadata(scraper_name=scraper_name, config=config or {})
         self._conn.execute(
-            "INSERT INTO runs (id, scraper_name, timestamp, config, status) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO runs (id, scraper_name, timestamp, config, status) VALUES (?, ?, ?, ?, ?)",
             (
                 run.id,
                 run.scraper_name,
@@ -115,13 +115,15 @@ class SQLiteBackend(StorageBackend):
             (limit,),
         )
         return [
-            run_metadata_from_dict({
-                "id": row["id"],
-                "scraper_name": row["scraper_name"],
-                "timestamp": row["timestamp"],
-                "config": json.loads(row["config"]),
-                "status": row["status"],
-            })
+            run_metadata_from_dict(
+                {
+                    "id": row["id"],
+                    "scraper_name": row["scraper_name"],
+                    "timestamp": row["timestamp"],
+                    "config": json.loads(row["config"]),
+                    "status": row["status"],
+                }
+            )
             for row in cursor.fetchall()
         ]
 
@@ -133,13 +135,15 @@ class SQLiteBackend(StorageBackend):
         row = cursor.fetchone()
         if row is None:
             return None
-        return run_metadata_from_dict({
-            "id": row["id"],
-            "scraper_name": row["scraper_name"],
-            "timestamp": row["timestamp"],
-            "config": json.loads(row["config"]),
-            "status": row["status"],
-        })
+        return run_metadata_from_dict(
+            {
+                "id": row["id"],
+                "scraper_name": row["scraper_name"],
+                "timestamp": row["timestamp"],
+                "config": json.loads(row["config"]),
+                "status": row["status"],
+            }
+        )
 
     # -- Snapshot persistence -----------------------------------------------
 
@@ -165,17 +169,19 @@ class SQLiteBackend(StorageBackend):
         self._conn.commit()
 
     def _row_to_snapshot(self, row: sqlite3.Row) -> Snapshot:
-        return snapshot_from_dict({
-            "id": row["id"],
-            "run_id": row["run_id"],
-            "url": row["url"],
-            "fingerprint": row["fingerprint"],
-            "normalized_html": row["normalized_html"],
-            "raw_html": row["raw_html"],
-            "extracted_items": json.loads(row["extracted_items"]),
-            "metadata": json.loads(row["metadata"]),
-            "timestamp": row["timestamp"],
-        })
+        return snapshot_from_dict(
+            {
+                "id": row["id"],
+                "run_id": row["run_id"],
+                "url": row["url"],
+                "fingerprint": row["fingerprint"],
+                "normalized_html": row["normalized_html"],
+                "raw_html": row["raw_html"],
+                "extracted_items": json.loads(row["extracted_items"]),
+                "metadata": json.loads(row["metadata"]),
+                "timestamp": row["timestamp"],
+            }
+        )
 
     def get_snapshot_by_id(self, snapshot_id: str) -> Snapshot | None:
         cursor = self._conn.execute(
@@ -229,22 +235,22 @@ class SQLiteBackend(StorageBackend):
         self._conn.commit()
 
     def _row_to_validation_result(self, row: sqlite3.Row) -> ValidationResult:
-        return validation_result_from_dict({
-            "id": row["id"],
-            "run_id": row["run_id"],
-            "url": row["url"],
-            "schema_name": row["schema_name"],
-            "total_items": row["total_items"],
-            "passed_count": row["passed_count"],
-            "failed_count": row["failed_count"],
-            "field_failures": json.loads(row["field_failures"]),
-            "null_ratios": json.loads(row["null_ratios"]),
-            "timestamp": row["timestamp"],
-        })
+        return validation_result_from_dict(
+            {
+                "id": row["id"],
+                "run_id": row["run_id"],
+                "url": row["url"],
+                "schema_name": row["schema_name"],
+                "total_items": row["total_items"],
+                "passed_count": row["passed_count"],
+                "failed_count": row["failed_count"],
+                "field_failures": json.loads(row["field_failures"]),
+                "null_ratios": json.loads(row["null_ratios"]),
+                "timestamp": row["timestamp"],
+            }
+        )
 
-    def get_latest_validation_result(
-        self, url: str, schema_name: str
-    ) -> ValidationResult | None:
+    def get_latest_validation_result(self, url: str, schema_name: str) -> ValidationResult | None:
         cursor = self._conn.execute(
             "SELECT * FROM validation_results "
             "WHERE url = ? AND schema_name = ? "
@@ -258,9 +264,7 @@ class SQLiteBackend(StorageBackend):
 
     def get_latest_validation_result_by_url(self, url: str) -> ValidationResult | None:
         cursor = self._conn.execute(
-            "SELECT * FROM validation_results "
-            "WHERE url = ? "
-            "ORDER BY timestamp DESC LIMIT 1",
+            "SELECT * FROM validation_results WHERE url = ? ORDER BY timestamp DESC LIMIT 1",
             (url,),
         )
         row = cursor.fetchone()

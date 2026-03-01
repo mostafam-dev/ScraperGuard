@@ -14,6 +14,8 @@ Example:
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import Field
 
 
@@ -28,7 +30,7 @@ class _Validators:
             min: Minimum acceptable value (inclusive).
             max: Maximum acceptable value (inclusive).
         """
-        kwargs: dict = {}
+        kwargs: dict[str, Any] = {}
         if min is not None:
             kwargs["ge"] = min
         if max is not None:
@@ -52,7 +54,7 @@ class _Validators:
             min: Minimum number of elements.
             max: Maximum number of elements.
         """
-        kwargs: dict = {}
+        kwargs: dict[str, Any] = {}
         if min:
             kwargs["min_length"] = min
         if max is not None:

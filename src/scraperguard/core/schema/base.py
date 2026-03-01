@@ -14,6 +14,7 @@ Example:
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
@@ -47,7 +48,7 @@ class BaseSchema(BaseModel):
     """Base class for scraper output schemas."""
 
     @classmethod
-    def validate_item(cls, item: dict) -> tuple[bool, list[FieldFailure]]:
+    def validate_item(cls, item: dict[str, Any]) -> tuple[bool, list[FieldFailure]]:
         """Validate a single item against the schema."""
         try:
             cls.model_validate(item)
@@ -69,15 +70,13 @@ class BaseSchema(BaseModel):
     @classmethod
     def validate_batch(
         cls,
-        items: list[dict],
+        items: list[dict[str, Any]],
         run_id: str = "",
         url: str = "",
     ) -> ValidationResult:
         """Validate a list of extracted items against the schema."""
         if not isinstance(items, list):
-            raise SchemaValidationError(
-                f"items must be a list, got {type(items).__name__}"
-            )
+            raise SchemaValidationError(f"items must be a list, got {type(items).__name__}")
 
         all_fields = cls.get_field_names()
         total_items = len(items)
@@ -134,17 +133,9 @@ class BaseSchema(BaseModel):
     @classmethod
     def get_required_fields(cls) -> list[str]:
         """Return list of required field names."""
-        return [
-            name
-            for name, info in cls.model_fields.items()
-            if info.is_required()
-        ]
+        return [name for name, info in cls.model_fields.items() if info.is_required()]
 
     @classmethod
     def get_optional_fields(cls) -> list[str]:
         """Return list of optional field names."""
-        return [
-            name
-            for name, info in cls.model_fields.items()
-            if not info.is_required()
-        ]
+        return [name for name, info in cls.model_fields.items() if not info.is_required()]

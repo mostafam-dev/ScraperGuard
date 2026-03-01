@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Any
 
 from scraperguard.core.dom_diff.parser import DOMNode, find_nodes_by_selector
 
@@ -37,7 +38,7 @@ class DOMChange:
     change_type: ChangeType
     path: str
     severity: str  # "high", "medium", "low"
-    details: dict = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     affected_selectors: list[str] = field(default_factory=list)
     message: str = ""
 
@@ -58,6 +59,7 @@ Change = DOMChange  # alias
 # Similarity scoring for child matching
 # ---------------------------------------------------------------------------
 
+
 def _node_classes(node: DOMNode) -> set[str]:
     cls = node.attributes.get("class", "")
     return set(cls.split()) if cls else set()
@@ -75,17 +77,20 @@ def _similarity(a: DOMNode, b: DOMNode) -> float:
 # Core diffing
 # ---------------------------------------------------------------------------
 
+
 def _diff_nodes(before: DOMNode, after: DOMNode, changes: list[DOMChange]) -> None:
     """Recursively compare two nodes and collect changes."""
     # Tag change
     if before.tag != after.tag:
-        changes.append(DOMChange(
-            change_type=ChangeType.TAG_CHANGED,
-            path=before.path,
-            severity="high",
-            details={"old_tag": before.tag, "new_tag": after.tag},
-            message=f"Element at {before.path} changed from '{before.tag}' to '{after.tag}'",
-        ))
+        changes.append(
+            DOMChange(
+                change_type=ChangeType.TAG_CHANGED,
+                path=before.path,
+                severity="high",
+                details={"old_tag": before.tag, "new_tag": after.tag},
+                message=f"Element at {before.path} changed from '{before.tag}' to '{after.tag}'",
+            )
+        )
 
     # Attribute change
     if before.attributes != after.attributes:
@@ -96,7 +101,7 @@ def _diff_nodes(before: DOMNode, after: DOMNode, changes: list[DOMChange]) -> No
             for k in before.attributes
             if k in after.attributes and before.attributes[k] != after.attributes[k]
         }
-        details = {}
+        details: dict[str, Any] = {}
         if added:
             details["added"] = added
         if removed:
@@ -104,9 +109,7 @@ def _diff_nodes(before: DOMNode, after: DOMNode, changes: list[DOMChange]) -> No
         if modified:
             details["modified"] = modified
 
-        class_changed = (
-            "class" in added or "class" in removed or "class" in modified
-        )
+        class_changed = "class" in added or "class" in removed or "class" in modified
         severity = "high" if class_changed else "medium"
 
         parts: list[str] = []
@@ -118,23 +121,27 @@ def _diff_nodes(before: DOMNode, after: DOMNode, changes: list[DOMChange]) -> No
             parts.append(f"modified {list(modified.keys())}")
         summary = ", ".join(parts)
 
-        changes.append(DOMChange(
-            change_type=ChangeType.ATTRIBUTES_CHANGED,
-            path=before.path,
-            severity=severity,
-            details=details,
-            message=f"Attributes changed at {before.path}: {summary}",
-        ))
+        changes.append(
+            DOMChange(
+                change_type=ChangeType.ATTRIBUTES_CHANGED,
+                path=before.path,
+                severity=severity,
+                details=details,
+                message=f"Attributes changed at {before.path}: {summary}",
+            )
+        )
 
     # Text change
     if before.text != after.text:
-        changes.append(DOMChange(
-            change_type=ChangeType.TEXT_CHANGED,
-            path=before.path,
-            severity="low",
-            details={"old_text": before.text, "new_text": after.text},
-            message=f"Text content changed at {before.path}",
-        ))
+        changes.append(
+            DOMChange(
+                change_type=ChangeType.TEXT_CHANGED,
+                path=before.path,
+                severity="low",
+                details={"old_text": before.text, "new_text": after.text},
+                message=f"Text content changed at {before.path}",
+            )
+        )
 
     # Compare children
     _diff_children(before, after, changes)
@@ -172,43 +179,48 @@ def _diff_children(before: DOMNode, after: DOMNode, changes: list[DOMChange]) ->
     # Unmatched before children -> NODE_REMOVED
     for bi, bchild in enumerate(before_children):
         if bi not in matched_before:
-            changes.append(DOMChange(
-                change_type=ChangeType.NODE_REMOVED,
-                path=bchild.path,
-                severity="high",
-                details={"tag": bchild.tag},
-                message=f"Element '{bchild.tag}' at {bchild.path} was removed",
-            ))
+            changes.append(
+                DOMChange(
+                    change_type=ChangeType.NODE_REMOVED,
+                    path=bchild.path,
+                    severity="high",
+                    details={"tag": bchild.tag},
+                    message=f"Element '{bchild.tag}' at {bchild.path} was removed",
+                )
+            )
 
     # Unmatched after children -> NODE_ADDED
     for ai, achild in enumerate(after_children):
         if ai not in matched_after:
-            changes.append(DOMChange(
-                change_type=ChangeType.NODE_ADDED,
-                path=achild.path,
-                severity="medium",
-                details={"tag": achild.tag},
-                message=f"New element '{achild.tag}' added at {achild.path}",
-            ))
+            changes.append(
+                DOMChange(
+                    change_type=ChangeType.NODE_ADDED,
+                    path=achild.path,
+                    severity="medium",
+                    details={"tag": achild.tag},
+                    message=f"New element '{achild.tag}' added at {achild.path}",
+                )
+            )
 
     # Check reordering among matched pairs
     if len(matches) >= 2:
         after_indices = [ai for _, ai in matches]
         # If after-indices are not monotonically increasing, children were reordered
         if any(after_indices[i] > after_indices[i + 1] for i in range(len(after_indices) - 1)):
-            changes.append(DOMChange(
-                change_type=ChangeType.CHILDREN_REORDERED,
-                path=before.path,
-                severity="medium",
-                details={
-                    "before_order": [before_children[bi].tag for bi, _ in matches],
-                    "after_order": [
-                        after_children[ai].tag
-                        for _, ai in sorted(matches, key=lambda m: m[1])
-                    ],
-                },
-                message=f"Children reordered at {before.path}",
-            ))
+            changes.append(
+                DOMChange(
+                    change_type=ChangeType.CHILDREN_REORDERED,
+                    path=before.path,
+                    severity="medium",
+                    details={
+                        "before_order": [before_children[bi].tag for bi, _ in matches],
+                        "after_order": [
+                            after_children[ai].tag for _, ai in sorted(matches, key=lambda m: m[1])
+                        ],
+                    },
+                    message=f"Children reordered at {before.path}",
+                )
+            )
 
     # Recurse into matched pairs
     for bi, ai in matches:
@@ -235,7 +247,8 @@ def diff_trees(before: DOMNode, after: DOMNode) -> list[DOMChange]:
 # Summary
 # ---------------------------------------------------------------------------
 
-def diff_summary(changes: list[DOMChange]) -> dict:
+
+def diff_summary(changes: list[DOMChange]) -> dict[str, Any]:
     """Return a summary dict of the changes."""
     severity_counts = Counter(c.severity for c in changes)
     type_counts = Counter(c.change_type.value for c in changes)
@@ -255,6 +268,7 @@ def diff_summary(changes: list[DOMChange]) -> dict:
 # ---------------------------------------------------------------------------
 # Selector mapping
 # ---------------------------------------------------------------------------
+
 
 def map_changes_to_selectors(
     changes: list[DOMChange],

@@ -8,7 +8,7 @@ result storage, and query operations needed by the drift tracker and API.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from scraperguard.storage.models import RunMetadata, Snapshot, ValidationResult
@@ -25,7 +25,7 @@ class StorageBackend(ABC):
     # -- Run management -----------------------------------------------------
 
     @abstractmethod
-    def create_run(self, scraper_name: str, config: dict | None = None) -> RunMetadata:
+    def create_run(self, scraper_name: str, config: dict[str, Any] | None = None) -> RunMetadata:
         """Create a new run record and return it.
 
         Generates a UUID4 id, sets status to "running", and persists the run.
@@ -136,9 +136,7 @@ class StorageBackend(ABC):
         """
 
     @abstractmethod
-    def get_latest_validation_result(
-        self, url: str, schema_name: str
-    ) -> ValidationResult | None:
+    def get_latest_validation_result(self, url: str, schema_name: str) -> ValidationResult | None:
         """Retrieve the most recent validation result for a URL and schema.
 
         "Most recent" is determined by the result's timestamp field,

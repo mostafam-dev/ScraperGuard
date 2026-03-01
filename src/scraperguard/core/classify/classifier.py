@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Any
 
 from scraperguard.core.dom_diff.differ import ChangeType, DOMChange
 from scraperguard.core.dom_diff.selector_tracker import SelectorStatus
@@ -183,8 +184,19 @@ def _infer_affected_fields(selector: str) -> list[str]:
     parts = re.findall(r"[\w-]+", selector)
     # Common field name patterns
     common_fields = [
-        "price", "title", "name", "description", "image", "url", "rating",
-        "review", "stock", "availability", "category", "brand", "sku",
+        "price",
+        "title",
+        "name",
+        "description",
+        "image",
+        "url",
+        "rating",
+        "review",
+        "stock",
+        "availability",
+        "category",
+        "brand",
+        "sku",
     ]
     for part in parts:
         part_lower = part.lower()
@@ -200,8 +212,7 @@ def _check_selector_break(inp: ClassificationInput) -> Classification | None:
         return None
 
     evidence = [
-        f"Selector '{s.selector}' returned 0 matches (was {s.previous_matches})"
-        for s in broken
+        f"Selector '{s.selector}' returned 0 matches (was {s.previous_matches})" for s in broken
     ]
 
     affected_fields: list[str] = []
@@ -268,13 +279,11 @@ def _check_dom_restructure(inp: ClassificationInput) -> Classification | None:
             failure_type=FailureType.DOM_RESTRUCTURE,
             confidence=confidence,
             evidence=[
-                f"Detected {total} structural DOM changes"
-                f" ({high_count} high severity)",
+                f"Detected {total} structural DOM changes ({high_count} high severity)",
             ],
             affected_fields=[],
             recommended_action=(
-                "Major structural change detected."
-                " Review page layout and update scraper selectors."
+                "Major structural change detected. Review page layout and update scraper selectors."
             ),
             severity=severity,
         )
@@ -336,6 +345,7 @@ def _check_partial_extraction(inp: ClassificationInput) -> Classification | None
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def classify_failure(inp: ClassificationInput) -> list[Classification]:
     """Run all classification rules and return matching classifications.
 
@@ -368,14 +378,16 @@ def classify_failure(inp: ClassificationInput) -> list[Classification]:
             has_failures = True
 
         if has_failures:
-            results.append(Classification(
-                failure_type=FailureType.UNKNOWN,
-                confidence=0.3,
-                evidence=["No specific failure pattern matched"],
-                affected_fields=[],
-                recommended_action="Manual investigation recommended.",
-                severity="warning",
-            ))
+            results.append(
+                Classification(
+                    failure_type=FailureType.UNKNOWN,
+                    confidence=0.3,
+                    evidence=["No specific failure pattern matched"],
+                    affected_fields=[],
+                    recommended_action="Manual investigation recommended.",
+                    severity="warning",
+                )
+            )
 
     results.sort(key=lambda c: c.confidence, reverse=True)
     return results
@@ -384,7 +396,7 @@ def classify_failure(inp: ClassificationInput) -> list[Classification]:
 _SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 
-def classify_and_summarize(inp: ClassificationInput) -> dict:
+def classify_and_summarize(inp: ClassificationInput) -> dict[str, Any]:
     """Run classify_failure and return a summary dict."""
     classifications = classify_failure(inp)
 
@@ -397,7 +409,7 @@ def classify_and_summarize(inp: ClassificationInput) -> dict:
             "recommended_actions": [],
         }
 
-    def _to_dict(c: Classification) -> dict:
+    def _to_dict(c: Classification) -> dict[str, Any]:
         return {
             "failure_type": c.failure_type.value,
             "confidence": c.confidence,

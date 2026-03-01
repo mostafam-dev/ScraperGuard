@@ -7,6 +7,7 @@ persistence into a single ``capture_snapshot`` call.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from scraperguard.core.snapshot.fingerprint import fingerprint_html, fingerprint_structure
 from scraperguard.core.snapshot.normalizer import normalize_html
@@ -17,7 +18,7 @@ from scraperguard.storage.models import Snapshot, SnapshotMetadata
 def capture_snapshot(
     url: str,
     raw_html: str,
-    extracted_items: list[dict],
+    extracted_items: list[dict[str, Any]],
     metadata: SnapshotMetadata,
     storage: StorageBackend,
     store_raw_html: bool = False,

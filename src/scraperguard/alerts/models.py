@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 
 def _utcnow() -> datetime:
@@ -21,9 +22,9 @@ class Alert:
     url: str
     run_id: str
     timestamp: datetime = field(default_factory=_utcnow)
-    details: dict = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict for JSON transport."""
         return {
             "severity": self.severity,

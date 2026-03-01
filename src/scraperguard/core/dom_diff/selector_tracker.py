@@ -66,11 +66,13 @@ def track_selectors(
         previous_count = count_selector_matches(previous_tree, selector) if previous_tree else None
         status = _determine_status(current_count, previous_count)
         message = _build_message(selector, status, current_count, previous_count)
-        results.append(SelectorStatus(
-            selector=selector,
-            current_matches=current_count,
-            previous_matches=previous_count,
-            status=status,
-            message=message,
-        ))
+        results.append(
+            SelectorStatus(
+                selector=selector,
+                current_matches=current_count,
+                previous_matches=previous_count,
+                status=status,
+                message=message,
+            )
+        )
     return results

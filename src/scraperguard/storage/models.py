@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 
 def _utcnow() -> datetime:
@@ -32,10 +33,10 @@ class RunMetadata:
     scraper_name: str
     id: str = field(default_factory=_uuid4)
     timestamp: datetime = field(default_factory=_utcnow)
-    config: dict = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     status: str = "running"  # "running" | "completed" | "failed"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "scraper_name": self.scraper_name,
@@ -45,7 +46,7 @@ class RunMetadata:
         }
 
 
-def run_metadata_from_dict(data: dict) -> RunMetadata:
+def run_metadata_from_dict(data: dict[str, Any]) -> RunMetadata:
     """Reconstruct a RunMetadata from a plain dict."""
     return RunMetadata(
         id=data["id"],
@@ -68,10 +69,10 @@ class SnapshotMetadata:
     http_status: int
     latency_ms: float
     timestamp: datetime
-    headers: dict
+    headers: dict[str, Any]
     response_size_bytes: int
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "http_status": self.http_status,
             "latency_ms": self.latency_ms,
@@ -81,7 +82,7 @@ class SnapshotMetadata:
         }
 
 
-def snapshot_metadata_from_dict(data: dict) -> SnapshotMetadata:
+def snapshot_metadata_from_dict(data: dict[str, Any]) -> SnapshotMetadata:
     """Reconstruct a SnapshotMetadata from a plain dict."""
     return SnapshotMetadata(
         http_status=data["http_status"],
@@ -108,10 +109,10 @@ class Snapshot:
     metadata: SnapshotMetadata
     id: str = field(default_factory=_uuid4)
     raw_html: str | None = None
-    extracted_items: list[dict] = field(default_factory=list)
+    extracted_items: list[dict[str, Any]] = field(default_factory=list)
     timestamp: datetime = field(default_factory=_utcnow)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "run_id": self.run_id,
@@ -124,7 +125,7 @@ class Snapshot:
             "timestamp": self.timestamp.isoformat(),
         }
 
-    def to_summary_dict(self) -> dict:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Lightweight dict excluding large HTML fields."""
         return {
             "id": self.id,
@@ -137,7 +138,7 @@ class Snapshot:
         }
 
 
-def snapshot_from_dict(data: dict) -> Snapshot:
+def snapshot_from_dict(data: dict[str, Any]) -> Snapshot:
     """Reconstruct a Snapshot from a plain dict."""
     return Snapshot(
         id=data["id"],
@@ -165,7 +166,7 @@ class FieldFailure:
     failure_type: str  # "missing" | "type_mismatch" | "null" | "out_of_range"
     count: int
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "field_name": self.field_name,
             "failure_type": self.failure_type,
@@ -173,7 +174,7 @@ class FieldFailure:
         }
 
 
-def field_failure_from_dict(data: dict) -> FieldFailure:
+def field_failure_from_dict(data: dict[str, Any]) -> FieldFailure:
     """Reconstruct a FieldFailure from a plain dict."""
     return FieldFailure(
         field_name=data["field_name"],
@@ -202,7 +203,7 @@ class ValidationResult:
     id: str = field(default_factory=_uuid4)
     timestamp: datetime = field(default_factory=_utcnow)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "run_id": self.run_id,
@@ -217,7 +218,7 @@ class ValidationResult:
         }
 
 
-def validation_result_from_dict(data: dict) -> ValidationResult:
+def validation_result_from_dict(data: dict[str, Any]) -> ValidationResult:
     """Reconstruct a ValidationResult from a plain dict."""
     return ValidationResult(
         id=data["id"],

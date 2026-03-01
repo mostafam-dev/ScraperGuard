@@ -90,8 +90,7 @@ class ScraperGuardObserverMiddleware:
             return instance
         except Exception:
             logger.exception(
-                "ScraperGuard: Failed to initialize middleware,"
-                " creating no-op instance",
+                "ScraperGuard: Failed to initialize middleware, creating no-op instance",
             )
             # Return a minimal instance that will pass-through everything
             instance = cls.__new__(cls)
