@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.git
+.github
+tests/
+*.egg-info
+dist/
+build/
+.pytest_cache
+.mypy_cache
+.ruff_cache
