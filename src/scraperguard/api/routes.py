@@ -126,9 +126,6 @@ async def get_report(
     # If url not specified, find the first snapshot for this run
     if url is None:
         # Query snapshots associated with this run — we need to find a URL
-        # Use a simple approach: get the run's snapshots via a direct query
-        snapshot = None
-        # Try to get a snapshot from this run via storage
         # The storage doesn't have a list-by-run method, so use the connection directly
         if hasattr(storage, '_conn'):
             cursor = storage._conn.execute(
@@ -145,12 +142,13 @@ async def get_report(
             content={"error": "No snapshots found for this run"},
         )
 
-    snapshot = storage.get_latest_snapshot(url)
+    storage.get_latest_snapshot(url)
     validation_result = storage.get_latest_validation_result(url, schema_name="")
     # Try to find any schema name for this URL
     if validation_result is None and hasattr(storage, '_conn'):
         cursor = storage._conn.execute(
-            "SELECT schema_name FROM validation_results WHERE url = ? ORDER BY timestamp DESC LIMIT 1",
+            "SELECT schema_name FROM validation_results"
+            " WHERE url = ? ORDER BY timestamp DESC LIMIT 1",
             (url,),
         )
         row = cursor.fetchone()

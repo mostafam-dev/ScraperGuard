@@ -17,7 +17,6 @@ import yaml
 
 from scraperguard.storage.base import StorageBackend
 
-
 # ---------------------------------------------------------------------------
 # Configuration dataclasses
 # ---------------------------------------------------------------------------

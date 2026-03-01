@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, AsyncGenerator
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from scraperguard.core.classify.classifier import ClassificationInput, classify_failure
 from scraperguard.core.dom_diff.differ import diff_trees
@@ -130,7 +131,7 @@ class PageObserver:
         metadata = SnapshotMetadata(
             http_status=200,
             latency_ms=latency_ms,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             headers={},
             response_size_bytes=len(self._raw_html.encode("utf-8")),
         )

@@ -13,7 +13,6 @@ import re
 import lxml.html
 from lxml.html import HtmlElement, tostring
 
-
 # ---------------------------------------------------------------------------
 # Configurable attribute removal / retention patterns
 # ---------------------------------------------------------------------------

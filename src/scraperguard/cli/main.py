@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -54,7 +54,10 @@ def cli() -> None:
 @cli.command()
 @click.argument("target")
 @click.option("--schema", default=None, help="Path to a Python file with a BaseSchema subclass.")
-@click.option("--config", "config_path", default=None, help="Path to scraperguard.yaml config file.")
+@click.option(
+    "--config", "config_path", default=None,
+    help="Path to scraperguard.yaml config file.",
+)
 @click.option("--run-id", default=None, help="Run ID to group with (creates new if not provided).")
 @click.option("--selectors", default=None, help="Comma-separated CSS selectors to track.")
 @click.option("--store-raw-html", is_flag=True, default=False, help="Store raw HTML in snapshot.")
@@ -121,7 +124,7 @@ def run(
         metadata = SnapshotMetadata(
             http_status=http_status,
             latency_ms=latency_ms,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             headers=headers,
             response_size_bytes=len(html.encode("utf-8")),
         )
@@ -156,7 +159,8 @@ def run(
                     click.echo(f"Warning: Drift analysis failed: {exc}", err=True)
                 storage.save_validation_result(validation_result)
                 click.echo(
-                    f"Schema validation: {validation_result.passed_count}/{validation_result.total_items} passed"
+                    f"Schema validation: "
+                    f"{validation_result.passed_count}/{validation_result.total_items} passed"
                 )
             except SchemaLoadError as exc:
                 click.echo(f"Warning: Schema load failed: {exc}", err=True)
@@ -168,7 +172,6 @@ def run(
         if selector_list:
             try:
                 current_tree = parse_to_tree(snapshot.normalized_html)
-                prev_snapshot = storage.get_latest_snapshot(url)
                 # get_latest_snapshot might return the one we just saved; get the one before
                 snapshots = storage.list_snapshots(url, limit=2)
                 prev_tree = None
@@ -193,7 +196,9 @@ def run(
                     if s.id != snapshot.id:
                         prev_snapshot_obj = s
                         break
-                if prev_snapshot_obj and should_diff(snapshot.fingerprint, prev_snapshot_obj.fingerprint):
+                if prev_snapshot_obj and should_diff(
+                    snapshot.fingerprint, prev_snapshot_obj.fingerprint,
+                ):
                     before_tree = parse_to_tree(prev_snapshot_obj.normalized_html)
                     after_tree = parse_to_tree(snapshot.normalized_html)
                     dom_changes = diff_trees(before_tree, after_tree)
@@ -208,7 +213,9 @@ def run(
                     if s.id != snapshot.id:
                         prev_snapshot_obj = s
                         break
-                if prev_snapshot_obj and should_diff(snapshot.fingerprint, prev_snapshot_obj.fingerprint):
+                if prev_snapshot_obj and should_diff(
+                    snapshot.fingerprint, prev_snapshot_obj.fingerprint,
+                ):
                     before_tree = parse_to_tree(prev_snapshot_obj.normalized_html)
                     after_tree = parse_to_tree(snapshot.normalized_html)
                     dom_changes = diff_trees(before_tree, after_tree)

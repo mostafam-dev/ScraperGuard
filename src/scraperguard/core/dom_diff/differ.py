@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 from scraperguard.core.dom_diff.parser import DOMNode, find_nodes_by_selector
 
 
-class ChangeType(str, Enum):
+class ChangeType(StrEnum):
     """Categories of structural DOM changes."""
 
     NODE_REMOVED = "node_removed"
@@ -202,7 +202,10 @@ def _diff_children(before: DOMNode, after: DOMNode, changes: list[DOMChange]) ->
                 severity="medium",
                 details={
                     "before_order": [before_children[bi].tag for bi, _ in matches],
-                    "after_order": [after_children[ai].tag for _, ai in sorted(matches, key=lambda m: m[1])],
+                    "after_order": [
+                        after_children[ai].tag
+                        for _, ai in sorted(matches, key=lambda m: m[1])
+                    ],
                 },
                 message=f"Children reordered at {before.path}",
             ))

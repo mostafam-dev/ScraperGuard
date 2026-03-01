@@ -235,7 +235,10 @@ class ScraperGuardValidationPipeline:
                 )
                 results = alert_mgr.dispatch(alert)
                 for name, ok in results.items():
-                    spider.logger.info("ScraperGuard: Alert sent to %s: %s", name, "OK" if ok else "FAILED")
+                    status = "OK" if ok else "FAILED"
+                    spider.logger.info(
+                        "ScraperGuard: Alert sent to %s: %s", name, status,
+                    )
 
     def _analyze_url(
         self,
@@ -257,12 +260,12 @@ class ScraperGuardValidationPipeline:
                 raw_html, metadata = captured
 
         if metadata is None:
-            from datetime import datetime, timezone
+            from datetime import UTC, datetime
 
             metadata = SnapshotMetadata(
                 http_status=200,
                 latency_ms=0.0,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 headers={},
                 response_size_bytes=len(raw_html.encode("utf-8")) if raw_html else 0,
             )

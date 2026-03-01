@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from scraperguard.config import ScraperGuardConfig, get_storage_backend, load_config
@@ -89,7 +89,10 @@ class ScraperGuardObserverMiddleware:
 
             return instance
         except Exception:
-            logger.exception("ScraperGuard: Failed to initialize middleware, creating no-op instance")
+            logger.exception(
+                "ScraperGuard: Failed to initialize middleware,"
+                " creating no-op instance",
+            )
             # Return a minimal instance that will pass-through everything
             instance = cls.__new__(cls)
             instance.config = ScraperGuardConfig()
@@ -133,7 +136,7 @@ class ScraperGuardObserverMiddleware:
             metadata = SnapshotMetadata(
                 http_status=response.status,
                 latency_ms=latency_ms,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 headers=headers_dict,
                 response_size_bytes=len(response.body),
             )

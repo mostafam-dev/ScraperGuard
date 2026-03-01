@@ -9,14 +9,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
-from scraperguard.core.dom_diff.differ import DOMChange, ChangeType
+from scraperguard.core.dom_diff.differ import ChangeType, DOMChange
 from scraperguard.core.dom_diff.selector_tracker import SelectorStatus
 from scraperguard.storage.models import ValidationResult
 
 
-class FailureType(str, Enum):
+class FailureType(StrEnum):
     """Known failure root causes."""
 
     SELECTOR_BREAK = "selector_break"
@@ -96,7 +96,10 @@ def _check_captcha(inp: ClassificationInput) -> Classification | None:
         confidence=confidence,
         evidence=[f"Found CAPTCHA signature: '{sig}'" for sig in found],
         affected_fields=[],
-        recommended_action="Target site is serving a CAPTCHA. Consider using a CAPTCHA-solving service or rotating IP addresses.",
+        recommended_action=(
+            "Target site is serving a CAPTCHA."
+            " Consider using a CAPTCHA-solving service or rotating IP addresses."
+        ),
         severity="critical",
     )
 
@@ -126,9 +129,15 @@ def _check_js_challenge(inp: ClassificationInput) -> Classification | None:
         return Classification(
             failure_type=FailureType.JS_CHALLENGE,
             confidence=0.80,
-            evidence=[f"Page has minimal text content ({len(visible_text)} chars) but contains {script_count} script tags"],
+            evidence=[
+                f"Page has minimal text content ({len(visible_text)} chars)"
+                f" but contains {script_count} script tags",
+            ],
             affected_fields=[],
-            recommended_action="Page requires JavaScript rendering. Use a browser-based scraper (Playwright, Selenium).",
+            recommended_action=(
+                "Page requires JavaScript rendering."
+                " Use a browser-based scraper (Playwright, Selenium)."
+            ),
             severity="critical",
         )
     return None
@@ -258,9 +267,15 @@ def _check_dom_restructure(inp: ClassificationInput) -> Classification | None:
         return Classification(
             failure_type=FailureType.DOM_RESTRUCTURE,
             confidence=confidence,
-            evidence=[f"Detected {total} structural DOM changes ({high_count} high severity)"],
+            evidence=[
+                f"Detected {total} structural DOM changes"
+                f" ({high_count} high severity)",
+            ],
             affected_fields=[],
-            recommended_action="Major structural change detected. Review page layout and update scraper selectors.",
+            recommended_action=(
+                "Major structural change detected."
+                " Review page layout and update scraper selectors."
+            ),
             severity=severity,
         )
     return None
@@ -286,7 +301,10 @@ def _check_ab_variant(inp: ClassificationInput) -> Classification | None:
         return Classification(
             failure_type=FailureType.AB_VARIANT,
             confidence=0.55,
-            evidence=[f"Partial selector failure ({broken_count}/{total_count}) with moderate structural changes suggests A/B variant"],
+            evidence=[
+                f"Partial selector failure ({broken_count}/{total_count})"
+                " with moderate structural changes suggests A/B variant",
+            ],
             affected_fields=[],
             recommended_action="Possible A/B test variant. Monitor over multiple runs to confirm.",
             severity="info",
@@ -305,7 +323,10 @@ def _check_partial_extraction(inp: ClassificationInput) -> Classification | None
             confidence=0.65,
             evidence=[f"{vr.failed_count}/{vr.total_items} items failed validation"],
             affected_fields=[],
-            recommended_action="Partial extraction failure. Some items are extracting correctly. Check specific failure patterns.",
+            recommended_action=(
+                "Partial extraction failure."
+                " Some items are extracting correctly. Check specific failure patterns."
+            ),
             severity="warning",
         )
     return None

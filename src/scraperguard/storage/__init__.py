@@ -6,7 +6,6 @@ The active backend is selected via configuration.
 """
 
 from scraperguard.storage.base import StorageBackend
-from scraperguard.storage.sqlite import SQLiteBackend
 from scraperguard.storage.models import (
     FieldFailure,
     RunMetadata,
@@ -19,6 +18,7 @@ from scraperguard.storage.models import (
     snapshot_metadata_from_dict,
     validation_result_from_dict,
 )
+from scraperguard.storage.sqlite import SQLiteBackend
 
 __all__ = [
     "StorageBackend",

@@ -12,7 +12,7 @@ The score is the primary top-level signal surfaced in the CLI, API, and alerts.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from scraperguard.core.classify.classifier import Classification
 from scraperguard.core.dom_diff.differ import DOMChange
@@ -54,7 +54,7 @@ class HealthReport:
     components: list[HealthComponent]
     classifications: list[Classification]
     drift_events: list[DriftEvent]
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     run_id: str = ""
     url: str = ""
 
@@ -186,7 +186,10 @@ def compute_structural_stability(
         name="Structural Stability",
         score=score,
         weight=weight,
-        details=f"{len(dom_changes)} structural changes detected ({high} high, {medium} medium, {low} low severity)",
+        details=(
+            f"{len(dom_changes)} structural changes detected"
+            f" ({high} high, {medium} medium, {low} low severity)"
+        ),
     )
 
 
